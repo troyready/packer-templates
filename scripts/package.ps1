@@ -61,10 +61,29 @@ if ($OS.Version -eq "6.1.7601") {
 
 
 Write-BoxstarterMessage "0ing out empty space..."
-wget http://download.sysinternals.com/files/SDelete.zip -OutFile sdelete.zip
-[System.Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem")
-[System.IO.Compression.ZipFile]::ExtractToDirectory("sdelete.zip", ".") 
-./sdelete.exe /accepteula -z c:
+if ($OS.Version -eq "6.1.7601") {
+    $url = "http://download.sysinternals.com/files/SDelete.zip"
+    $file = "$env:temp\sdelete.zip"
+    if(Test-Path $file){Remove-Item $file -Force}
+    $downloader=new-object net.webclient
+    $wp=[system.net.WebProxy]::GetDefaultProxy()
+    $wp.UseDefaultCredentials=$true
+    $downloader.Proxy=$wp
+    $downloader.DownloadFile($url, $file)
+    $shell = new-object -com shell.application
+    $zip = $shell.NameSpace($file)
+    foreach($item in $zip.items())
+    {
+    $shell.Namespace("$env:temp").copyhere($item)
+    }
+    $sdelcommand = "$env:temp\sdelete.exe /accepteula -z c:"
+    iex "& $sdelcommand"
+    } else {
+    wget http://download.sysinternals.com/files/SDelete.zip -OutFile sdelete.zip
+    [System.Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem")
+    [System.IO.Compression.ZipFile]::ExtractToDirectory("sdelete.zip", ".")
+    ./sdelete.exe /accepteula -z c:
+}
 
 mkdir C:\Windows\Panther\Unattend
 if ($OS.Version -eq "6.1.7601") {
@@ -86,7 +105,11 @@ if ($OS.Version -eq "6.1.7601") {
 }
 
 if ($OS.Version -eq "6.1.7601") {
-    Enable-PSRemoting -Force -SkipNetworkProfileCheck
+    if (Test-Path "C:\Windows\System32\WindowsPowerShell\v1.0\pspluginwkr-v3.dll"){
+        Enable-PSRemoting -Force -SkipNetworkProfileCheck
+        } else {
+        Enable-PSRemoting -Force
+        }
     Enable-WSManCredSSP -Force -Role Server
     } else {
     Enable-WSManCredSSP -Force -Role Server
