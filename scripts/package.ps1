@@ -1,10 +1,15 @@
 $OS = Get-WmiObject -Class win32_OperatingSystem -namespace "root\CIMV2"
 
+function Check-Command($cmdname)
+{
+    return [bool](Get-Command -Name $cmdname -ErrorAction SilentlyContinue)
+}
+
 Enable-RemoteDesktop
-if ($OS.Version -eq "6.1.7601") {
-    C:\Windows\System32\netsh.exe advfirewall firewall add rule name="Remote Desktop" dir=in localport=3389 protocol=TCP action=allow
-    } else {
+if (Check-Command -cmdname 'Set-NetFirewallRule') {
     Set-NetFirewallRule -Name RemoteDesktop-UserMode-In-TCP -Enabled True
+    } else {
+    C:\Windows\System32\netsh.exe advfirewall firewall add rule name="Remote Desktop" dir=in localport=3389 protocol=TCP action=allow
 }
 
 Write-BoxstarterMessage "Removing page file"
@@ -13,8 +18,7 @@ Set-ItemProperty -Path $pageFileMemoryKey -Name PagingFiles -Value ""
 
 Update-ExecutionPolicy -Policy Unrestricted
 
-# cmdlet not available in win 7
-if ($OS.Version -ne "6.1.7601") {
+if (Check-Command -cmdname 'Uninstall-WindowsFeature') {
     Write-BoxstarterMessage "Removing unused features..."
     Remove-WindowsFeature -Name 'Powershell-ISE'
     Get-WindowsFeature | 
@@ -53,10 +57,10 @@ Dism.exe /online /Cleanup-Image /StartComponentCleanup /ResetBase
     }
 
 Write-BoxstarterMessage "defragging..."
-if ($OS.Version -eq "6.1.7601") {
-    Defrag.exe c: /H
-    } else {
+if (Check-Command -cmdname 'Optimize-Volume') {
     Optimize-Volume -DriveLetter C
+    } else {
+    Defrag.exe c: /H
 }
 
 
@@ -79,10 +83,10 @@ $System.AutomaticManagedPagefile = $true
 $System.Put()
 
 Write-BoxstarterMessage "Setting up winrm"
-if ($OS.Version -eq "6.1.7601") {
-    C:\Windows\System32\netsh.exe advfirewall firewall add rule name="WinRM-HTTP" dir=in localport=5985 protocol=TCP action=allow
-    } else {
+if (Check-Command -cmdname 'Set-NetFirewallRule') {
     Set-NetFirewallRule -Name WINRM-HTTP-In-TCP-PUBLIC -RemoteAddress Any
+    } else {
+    C:\Windows\System32\netsh.exe advfirewall firewall add rule name="WinRM-HTTP" dir=in localport=5985 protocol=TCP action=allow
 }
 
 if ($OS.Version -eq "6.1.7601") {
