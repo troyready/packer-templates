@@ -22,15 +22,7 @@ if ($OS.Version -ne "6.1.7601") {
     Uninstall-WindowsFeature -Remove
 }
 
-if ($OS.Version -eq "6.1.7601") {
-    # Skipping updates specific to Win10 upgrade & telemetry noted at:
-    # https://github.com/bmrf/tron/blob/d7c8e00a4300bcffa6095aa9361850f7430fd3d2/tron.bat#L1301-L1326
-    # (KB971033/KB2952664/KB3021917/KB3068708/KB3075249/KB3080149)
-    # This should prevent the 3+GiB KB3035583 from being downloaded
-    Install-WindowsUpdate -criteria "IsHidden=0 and IsInstalled=0 and Type='Software' and BrowseOnly=0 and UpdateID!='62c68477-0f45-46aa-8af8-d0c189d6dd8e' and UpdateID!='761d6bfd-33b5-4988-9d0c-417f0284168f' and UpdateID!='89febea4-e23a-4ff5-9ca9-d4fc9e768a70' and UpdateID!='0cd9efd9-d371-4e7d-8381-15ae5b55ea79' and UpdateID!='6cc5cc49-03a2-4609-882e-7889c547814e' and UpdateID!='48aa5065-93fc-4cc8-b071-80cb1da35f7b'" -AcceptEula
-    } else {
-    Install-WindowsUpdate -AcceptEula
-}
+Install-WindowsUpdate -AcceptEula
 if(Test-PendingReboot){ Invoke-Reboot }
 
 Write-BoxstarterMessage "Cleaning SxS..."
